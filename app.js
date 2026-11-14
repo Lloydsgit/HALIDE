@@ -131,6 +131,7 @@ const fileInput = $('#fileInput');
 const toastEl = $('#toast');
 const layerList = $('#layerList');
 const textEditor = $('#textEditor');
+const overlayEditor = $('#overlayEditor');
 const overlayGrid = $('#overlayGrid');
 const overlayNav = $('#overlayNav');
 const fontGrid = $('#fontGrid');
@@ -1814,8 +1815,12 @@ function renderLayerList(){
 function syncLayerUI(){
   const L = selectedLayer();
   const isText = L && L.kind === 'text';
+  const isOv = L && L.kind === 'overlay';
   if (textEditor) textEditor.hidden = !isText;
+  if (overlayEditor) overlayEditor.hidden = !isOv;
   if ($('#textHint')) $('#textHint').hidden = !!isText;
+  if ($('#overlayHint')) $('#overlayHint').hidden = !!isOv;
+  if (isOv) syncOverlayUI(L);
   if (!isText) return;
 
   $('#textContent').value = L.text;
@@ -1840,6 +1845,14 @@ function syncLayerUI(){
   $('#textBlendPills')._sync();
   // load the face so the canvas has it before we paint
   if (FONTS) FONTS.load(L.font, L.weight, L.italic).then(() => scheduleRender());
+}
+
+function syncOverlayUI(L){
+  $('#ovScale').value = Math.round(L.w*100); $('#ovScaleVal').textContent = Math.round(L.w*100);
+  $('#ovRot').value = L.rot;   $('#ovRotVal').textContent = L.rot;
+  $('#ovOp').value = Math.round(L.opacity*100); $('#ovOpVal').textContent = Math.round(L.opacity*100);
+  $('#ovFlip').checked = !!L.flip;
+  $('#ovBlendPills')._sync();
 }
 
 function toHex(c){
@@ -1887,11 +1900,13 @@ function buildOverlayNav(){
 
 function overlayList(){
   if (!OL) return [];
+  const q = (state.overlaySearch || '').trim().toLowerCase();
+  // a search spans the whole library; the category filter only applies to browsing
+  if (q) return OL.all.filter(o =>
+    o.name.toLowerCase().includes(q) || o.cat.toLowerCase().includes(q));
   let list = state.overlayCat && state.overlayCat !== 'all'
     ? OL.all.filter(o => slug(o.cat) === state.overlayCat)
     : OL.all;
-  const q = (state.overlaySearch || '').trim().toLowerCase();
-  if (q) list = list.filter(o => o.name.toLowerCase().includes(q) || o.cat.toLowerCase().includes(q));
   return list;
 }
 
@@ -1915,6 +1930,7 @@ function buildOverlayGrid(){
     b.addEventListener('click', () => {
       const L = addLayer('overlay', { overlayId: o.id, w: o.w || .4 });
       renderLayerList();
+      syncLayerUI();
       scheduleRender();
       toast('Added ' + o.name);
     });
@@ -2087,6 +2103,47 @@ function wireLayerUI(){
      {id:'overlay',label:'Overlay'},{id:'soft-light',label:'Soft'},{id:'difference',label:'Diff'}],
     () => (selectedLayer()||{}).blend || 'source-over',
     id => { const L = selectedLayer(); if (L){ L.blend = id; $('#textBlendPills')._sync(); scheduleRender(); } });
+
+  buildPills($('#ovBlendPills'),
+    [{id:'source-over',label:'Normal'},{id:'multiply',label:'Multiply'},{id:'screen',label:'Screen'},
+     {id:'overlay',label:'Overlay'},{id:'soft-light',label:'Soft'},{id:'difference',label:'Diff'}],
+    () => (selectedLayer()||{}).blend || 'source-over',
+    id => { const L = selectedLayer(); if (L){ L.blend = id; $('#ovBlendPills')._sync(); scheduleRender(); } });
+
+  const bindOv = (sel, key, scale, fmt) => {
+    const el = $(sel);
+    if (!el) return;
+    el.addEventListener('input', () => {
+      const L = selectedLayer();
+      if (!L || L.kind !== 'overlay') return;
+      L[key] = scale ? +el.value/scale : +el.value;
+      const valEl = $(sel + 'Val');
+      if (valEl) valEl.textContent = fmt ? fmt(L[key]) : Math.round(L[key]);
+      scheduleRender();
+    });
+  };
+  bindOv('#ovScale', 'w', 100);
+  bindOv('#ovRot', 'rot', 1);
+  bindOv('#ovOp', 'opacity', 100);
+  $('#ovFlip').addEventListener('change', e => {
+    const L = selectedLayer(); if (L) { L.flip = e.target.checked; scheduleRender(); }
+  });
+  $('#ovDelBtn').addEventListener('click', () => {
+    const L = selectedLayer(); if (!L) return;
+    removeLayer(L.id); renderLayerList(); syncLayerUI(); scheduleRender();
+  });
+  $('#ovDupBtn').addEventListener('click', () => {
+    const L = selectedLayer(); if (!L) return;
+    duplicateLayer(L.id); renderLayerList(); syncLayerUI(); scheduleRender();
+  });
+  $('#ovUpBtn').addEventListener('click', () => {
+    const L = selectedLayer(); if (!L) return;
+    moveLayer(L.id, 1); renderLayerList(); scheduleRender();
+  });
+  $('#ovDownBtn').addEventListener('click', () => {
+    const L = selectedLayer(); if (!L) return;
+    moveLayer(L.id, -1); renderLayerList(); scheduleRender();
+  });
 
   const bindText = (sel, key, scale, fmt) => {
     const el = $(sel);

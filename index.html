@@ -220,7 +220,34 @@
       </div>
       <nav class="coll-nav" id="overlayNav" aria-label="Overlay categories"></nav>
       <div class="overlay-grid" id="overlayGrid"></div>
-      <p class="fineprint">Tap an overlay to drop it on the card — then drag it where you want it.</p>
+      <div class="text-editor" id="overlayEditor" hidden>
+        <div class="slider-row">
+          <div class="slider-top"><b>Scale</b><i id="ovScaleVal">40</i></div>
+          <input type="range" id="ovScale" min="5" max="200" step="1" value="40">
+        </div>
+        <div class="slider-row">
+          <div class="slider-top"><b>Rotate</b><i id="ovRotVal">0</i></div>
+          <input type="range" id="ovRot" min="-180" max="180" step="1" value="0">
+        </div>
+        <div class="slider-row">
+          <div class="slider-top"><b>Opacity</b><i id="ovOpVal">100</i></div>
+          <input type="range" id="ovOp" min="0" max="100" step="1" value="100">
+        </div>
+        <label class="field">
+          <span>Blend</span>
+          <div class="pills pills-xs" id="ovBlendPills"></div>
+        </label>
+        <div class="toggles">
+          <label class="switch"><input type="checkbox" id="ovFlip"><span>Flip</span></label>
+        </div>
+        <div class="layer-actions">
+          <button class="mini" id="ovDupBtn" type="button">Duplicate</button>
+          <button class="mini" id="ovUpBtn" type="button">Bring up</button>
+          <button class="mini" id="ovDownBtn" type="button">Send down</button>
+          <button class="mini mini-danger" id="ovDelBtn" type="button">Delete</button>
+        </div>
+      </div>
+      <p class="fineprint" id="overlayHint">Tap an overlay to drop it on the card — then drag it where you want it.</p>
     </section>
 
     <section class="block">
