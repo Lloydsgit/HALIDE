@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HALIDE — personal photo lab</title>
+<meta name="description" content="Turn any photo retro, digital-camera, Y2K, or panoramic — then print it as a custom pic card.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a0a0b'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%23ff7a29' stroke-width='2.4'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%23ff7a29'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=IBM+Plex+Mono:wght@300;400;500;600&family=Caveat:wght@400..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span class="brand-name">HALIDE</span>
+    <span class="brand-sub">personal photo lab</span>
+  </div>
+
+  <nav class="modes" role="tablist" aria-label="Quick looks">
+    <button class="mode is-active" data-mode="film" role="tab" aria-selected="true">Film</button>
+    <button class="mode" data-mode="digicam" role="tab" aria-selected="false">Digicam</button>
+    <button class="mode" data-mode="y2k" role="tab" aria-selected="false">Y2K</button>
+    <button class="mode" data-mode="pano" role="tab" aria-selected="false">Pano</button>
+    <button class="mode" data-mode="fx" role="tab" aria-selected="false">FX</button>
+  </nav>
+
+  <div class="topbar-actions">
+    <span class="lib-count mono" id="libCount">536 looks</span>
+    <button id="resetBtn" class="btn btn-ghost" type="button">Reset</button>
+    <button id="exportBtn" class="btn btn-primary" type="button" disabled>
+      <span>Export</span><span class="btn-hint">PNG</span>
+    </button>
+  </div>
+</header>
+
+<main class="lab">
+
+  <!-- STAGE -->
+  <section class="stage" id="stage">
+    <div class="stage-inner" id="stageInner">
+      <div class="empty" id="emptyState">
+        <div class="empty-art" aria-hidden="true">
+          <div class="reel"><span></span><span></span><span></span></div>
+        </div>
+        <h1>Drop a photo into the developer</h1>
+        <p>536 film, digicam, Y2K, Pinterest and effects looks — then mount it on a custom pic card.</p>
+        <div class="empty-actions">
+          <button class="btn btn-primary" id="pickBtn" type="button">Choose a photo</button>
+          <label class="switch-inline">
+            <input type="checkbox" id="sampleToggle">
+            <span>use a sample frame</span>
+          </label>
+        </div>
+        <p class="empty-hint">JPG · PNG · WebP · HEIC (if your browser reads it) — nothing is uploaded, all processing happens on your device.</p>
+      </div>
+
+      <div class="canvas-wrap" id="canvasWrap" hidden>
+        <canvas id="out"></canvas>
+        <div class="grain-overlay" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <div class="stage-foot" id="stageFoot" hidden>
+      <span id="srcMeta" class="mono"></span>
+      <span id="outMeta" class="mono"></span>
+    </div>
+  </section>
+
+  <!-- PANEL -->
+  <aside class="panel" id="panel">
+
+    <section class="block block-browse">
+      <header class="block-head">
+        <h2>Looks</h2>
+        <button class="mini" id="surpriseBtn" type="button" title="Random look">Surprise me</button>
+      </header>
+
+      <div class="browse-bar">
+        <input type="search" id="searchInput" placeholder="Search 536 looks…" autocomplete="off" spellcheck="false">
+      </div>
+
+      <nav class="coll-nav" id="collNav" aria-label="Collections"></nav>
+
+      <div class="grid-label-row">
+        <span class="mono dim" id="gridLabel">—</span>
+        <span class="mono dim">tap the star to save</span>
+      </div>
+
+      <div class="preset-grid" id="presetGrid"></div>
+
+      <div class="look-name">
+        <strong id="presetName">—</strong>
+        <span class="mono dim" id="presetColl"></span>
+      </div>
+    </section>
+
+    <section class="block">
+      <header class="block-head">
+        <h2>Develop</h2>
+        <button class="mini" id="autoBtn" type="button" title="Auto-level the exposure">Auto</button>
+      </header>
+      <div class="slider-row">
+        <div class="slider-top"><b>Intensity</b><i id="intensityVal">100</i></div>
+        <input type="range" id="intensity" min="0" max="100" step="1" value="100">
+      </div>
+      <div class="sliders" id="sliders"></div>
+      <div class="compare-row">
+        <button class="mini" id="compareBtn" type="button">Hold to compare</button>
+        <label class="switch"><input type="checkbox" id="fxToggle" checked><span>Apply look effects</span></label>
+      </div>
+    </section>
+
+    <section class="block">
+      <header class="block-head"><h2>Optics</h2></header>
+      <div class="sliders" id="opticSliders"></div>
+      <div class="toggles">
+        <label class="switch"><input type="checkbox" id="flashToggle"><span>Flash</span></label>
+        <label class="switch"><input type="checkbox" id="stampToggle"><span>Date stamp</span></label>
+        <label class="switch"><input type="checkbox" id="scanToggle"><span>LCD scanlines</span></label>
+      </div>
+    </section>
+
+    <section class="block">
+      <header class="block-head"><h2>Texture</h2></header>
+      <div class="pills pills-sm" id="texturePills"></div>
+    </section>
+
+    <section class="block">
+      <header class="block-head">
+        <h2>Text</h2>
+        <button class="mini" id="addTextBtn" type="button" title="Add a text layer">+ Add text</button>
+      </header>
+      <div class="layer-list" id="layerList"></div>
+      <div class="text-editor" id="textEditor" hidden>
+        <label class="field">
+          <span>Content</span>
+          <textarea id="textContent" rows="2" placeholder="double exposure" maxlength="120"></textarea>
+        </label>
+        <button class="btn btn-ghost btn-wide font-open" id="fontOpenBtn" type="button">
+          <span id="fontCurrent">Inter</span>
+          <span class="mono dim" id="fontCatLabel">Sans</span>
+        </button>
+        <div class="slider-row">
+          <div class="slider-top"><b>Size</b><i id="textSizeVal">9</i></div>
+          <input type="range" id="textSize" min="1" max="40" step=".5" value="9">
+        </div>
+        <div class="slider-row">
+          <div class="slider-top"><b>Weight</b><i id="textWeightVal">700</i></div>
+          <input type="range" id="textWeight" min="100" max="900" step="100" value="700">
+        </div>
+        <div class="slider-row">
+          <div class="slider-top"><b>Tracking</b><i id="textTrackVal">0</i></div>
+          <input type="range" id="textTrack" min="-10" max="40" step="1" value="0">
+        </div>
+        <div class="slider-row">
+          <div class="slider-top"><b>Line height</b><i id="textLhVal">1.15</i></div>
+          <input type="range" id="textLh" min=".8" max="2.4" step=".05" value="1.15">
+        </div>
+        <div class="slider-row">
+          <div class="slider-top"><b>Rotate</b><i id="textRotVal">0</i></div>
+          <input type="range" id="textRot" min="-180" max="180" step="1" value="0">
+        </div>
+        <div class="slider-row">
+          <div class="slider-top"><b>Opacity</b><i id="textOpVal">100</i></div>
+          <input type="range" id="textOp" min="0" max="100" step="1" value="100">
+        </div>
+        <div class="slider-row">
+          <div class="slider-top"><b>Outline</b><i id="textStrokeVal">0</i></div>
+          <input type="range" id="textStroke" min="0" max="20" step=".5" value="0">
+        </div>
+        <div class="slider-row">
+          <div class="slider-top"><b>Shadow</b><i id="textShadowVal">0</i></div>
+          <input type="range" id="textShadow" min="0" max="100" step="1" value="0">
+        </div>
+        <div class="slider-row">
+          <div class="slider-top"><b>Glow</b><i id="textGlowVal">0</i></div>
+          <input type="range" id="textGlow" min="0" max="100" step="1" value="0">
+        </div>
+        <div class="fields">
+          <label class="field field-row">
+            <span>Fill</span>
+            <input type="color" id="textColor" value="#ffffff">
+            <input type="color" id="textStrokeColor" value="#111111" title="Outline colour">
+          </label>
+          <label class="field">
+            <span>Align</span>
+            <div class="pills pills-xs" id="textAlignPills"></div>
+          </label>
+          <label class="field">
+            <span>Blend</span>
+            <div class="pills pills-xs" id="textBlendPills"></div>
+          </label>
+        </div>
+        <div class="toggles">
+          <label class="switch"><input type="checkbox" id="textItalic"><span>Italic</span></label>
+          <label class="switch"><input type="checkbox" id="textUpper"><span>UPPERCASE</span></label>
+          <label class="switch"><input type="checkbox" id="textBg"><span>Backing plate</span></label>
+        </div>
+        <div class="layer-actions">
+          <button class="mini" id="textDupBtn" type="button">Duplicate</button>
+          <button class="mini" id="textUpBtn" type="button">Bring up</button>
+          <button class="mini" id="textDownBtn" type="button">Send down</button>
+          <button class="mini mini-danger" id="textDelBtn" type="button">Delete</button>
+        </div>
+      </div>
+      <p class="fineprint" id="textHint">Add a caption, a title, a watermark — then drag it anywhere on the card.</p>
+    </section>
+
+    <section class="block">
+      <header class="block-head">
+        <h2>Overlays</h2>
+        <button class="mini" id="clearOverlaysBtn" type="button" title="Remove all overlays">Clear</button>
+      </header>
+      <div class="browse-bar">
+        <input type="search" id="overlaySearch" placeholder="Search overlays…" autocomplete="off" spellcheck="false">
+      </div>
+      <nav class="coll-nav" id="overlayNav" aria-label="Overlay categories"></nav>
+      <div class="overlay-grid" id="overlayGrid"></div>
+      <p class="fineprint">Tap an overlay to drop it on the card — then drag it where you want it.</p>
+    </section>
+
+    <section class="block">
+      <header class="block-head"><h2>Card</h2></header>
+      <div class="pills" id="cardPills"></div>
+      <div class="fields">
+        <label class="field">
+          <span>Title</span>
+          <input type="text" id="titleInput" placeholder="summer, no filter needed" maxlength="42">
+        </label>
+        <label class="field">
+          <span>Caption</span>
+          <input type="text" id="captionInput" placeholder="roll 04 · frame 12" maxlength="60">
+        </label>
+        <label class="field field-row">
+          <span>Accent</span>
+          <input type="color" id="accentInput" value="#ff7a29">
+          <span class="mono dim" id="accentHex">#ff7a29</span>
+        </label>
+      </div>
+    </section>
+
+    <section class="block">
+      <header class="block-head"><h2>Format</h2></header>
+      <div class="pills pills-sm" id="aspectPills"></div>
+      <div class="pills pills-sm" id="fitPills"></div>
+    </section>
+
+    <section class="block">
+      <header class="block-head"><h2>Print</h2></header>
+      <div class="pills pills-sm" id="sizePills"></div>
+      <div class="pills pills-sm" id="fmtPills"></div>
+      <button class="btn btn-primary btn-wide" id="downloadBtn" type="button" disabled>Download card</button>
+      <button class="btn btn-ghost btn-wide" id="copyBtn" type="button">Copy to clipboard</button>
+      <p class="fineprint">Cards export with the frame baked in, at up to 3200px on the long edge.</p>
+    </section>
+
+  </aside>
+</main>
+
+<input type="file" id="fileInput" accept="image/*" hidden>
+
+<div class="modal" id="fontModal" hidden>
+  <div class="modal-backdrop" id="fontBackdrop"></div>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-label="Choose a font">
+    <header class="modal-head">
+      <h2>Fonts</h2>
+      <span class="mono dim" id="fontCount">1961 families</span>
+      <button class="mini" id="fontCloseBtn" type="button">Close</button>
+    </header>
+    <div class="browse-bar">
+      <input type="search" id="fontSearch" placeholder="Search 1961 fonts…" autocomplete="off" spellcheck="false">
+    </div>
+    <nav class="coll-nav" id="fontNav" aria-label="Font categories"></nav>
+    <div class="font-grid" id="fontGrid"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="effects.js"></script>
+<script src="presets.js"></script>
+<script src="fonts.js"></script>
+<script src="overlays.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
